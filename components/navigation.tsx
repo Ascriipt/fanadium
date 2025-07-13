@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Menu, X, Wallet, User, Calendar, ShoppingBag, LogIn } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
@@ -43,14 +44,38 @@ export function Navigation() {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button onClick={connectWallet} className="text-gray-300 hover:text-white">
-              <Wallet className="w-4 h-4 mr-2" />
-              Connect Wallet
-            </Button>
-            <div className="text-gray-300 hover:text-white">
-              <User className="w-4 h-4 mr-2" />
-              <Link href="/profile">Profile</Link>
-            </div>
+            {!isConnected ? (
+              <Button onClick={connectWallet} className="text-gray-300 hover:text-white">
+                <Wallet className="w-4 h-4 mr-2" />
+                Connect Wallet
+              </Button>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src="/placeholder.png" />
+                      <AvatarFallback className="bg-purple-600/20 text-purple-300 text-sm">JD</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-black/90 backdrop-blur-sm border-purple-500/20">
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="text-gray-300 hover:text-white">
+                      <User className="w-4 h-4 mr-2" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setIsConnected(false)}
+                    className="text-red-400 hover:text-red-300"
+                  >
+                    <Wallet className="w-4 h-4 mr-2" />
+                    Disconnect
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -84,7 +109,7 @@ export function Navigation() {
               Profile
             </Link>
             <div className="pt-4 space-y-2">
-              {!isConnected && (
+              {!isConnected ? (
                 <Button
                   onClick={connectWallet}
                   className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
@@ -92,6 +117,25 @@ export function Navigation() {
                   <Wallet className="w-4 h-4 mr-2" />
                   Connect Wallet
                 </Button>
+              ) : (
+                <div className="flex items-center gap-3 p-3 bg-purple-600/10 rounded-lg border border-purple-500/20">
+                  <Avatar className="w-10 h-10">
+                    <AvatarImage src="/placeholder.png" />
+                    <AvatarFallback className="bg-purple-600/20 text-purple-300">JD</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="text-white font-medium">John Doe</div>
+                    <div className="text-gray-400 text-sm">Connected</div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsConnected(false)}
+                    className="text-red-400 hover:text-red-300"
+                  >
+                    <Wallet className="w-4 h-4" />
+                  </Button>
+                </div>
               )}
               <Link href="/login">
                 <Button

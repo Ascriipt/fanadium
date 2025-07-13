@@ -23,7 +23,7 @@ export default function EventPage() {
   
   const [event, setEvent] = useState<Event | null>(null);
   const [submissionsState, setSubmissionsState] = useState<Submission[]>([]);
-  const [votedSubmissions, setVotedSubmissions] = useState<Set<number>>(new Set());
+  const [votedSubmissions, setVotedSubmissions] = useState<Record<number, 'up' | 'down'>>({});
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [timeLeft, setTimeLeft] = useState<{
@@ -50,7 +50,7 @@ export default function EventPage() {
       try {
         const parsed = JSON.parse(votedData);
         if (parsed[eventId]) {
-          setVotedSubmissions(new Set(parsed[eventId]));
+          setVotedSubmissions(parsed[eventId]);
         }
       } catch (error) {
         console.error('Error loading voted submissions:', error);
@@ -100,7 +100,7 @@ export default function EventPage() {
 
   // Single function voting - only update localStorage, let state sync
   const handleVote = (submissionIndex: number, voteType: 'up' | 'down') => {
-    if (votedSubmissions.has(submissionIndex)) return;
+    if (submissionIndex in votedSubmissions) return;
     
     const voteChange = voteType === 'up' ? 1 : -1;
     
@@ -116,12 +116,12 @@ export default function EventPage() {
     
     // Mark as voted and save to localStorage
     setVotedSubmissions(prev => {
-      const newVoted = new Set([...prev, submissionIndex]);
+      const newVoted = { ...prev, [submissionIndex]: voteType };
       
       // Save voted submissions to localStorage
       const votedData = localStorage.getItem('fanadium_voted_submissions');
       const allVoted = votedData ? JSON.parse(votedData) : {};
-      allVoted[eventId] = Array.from(newVoted);
+      allVoted[eventId] = newVoted;
       localStorage.setItem('fanadium_voted_submissions', JSON.stringify(allVoted));
       
       return newVoted;
@@ -319,8 +319,14 @@ export default function EventPage() {
                           size="sm"
                           variant="ghost"
                           onClick={() => handleVote(index, 'up')}
-                          disabled={votedSubmissions.has(index)}
-                          className={votedSubmissions.has(index) ? 'text-gray-500' : 'text-green-400 hover:text-green-300 hover:bg-green-400/10'}
+                          disabled={index in votedSubmissions}
+                          className={
+                            index in votedSubmissions 
+                              ? votedSubmissions[index] === 'up'
+                                ? 'text-green-400 bg-green-400/20 hover:bg-green-400/30'
+                                : 'text-gray-500'
+                              : 'text-green-400 hover:text-green-300 hover:bg-green-400/10'
+                          }
                         >
                           <ThumbsUp className="w-4 h-4" />
                         </Button>
@@ -328,8 +334,14 @@ export default function EventPage() {
                           size="sm"
                           variant="ghost"
                           onClick={() => handleVote(index, 'down')}
-                          disabled={votedSubmissions.has(index)}
-                          className={votedSubmissions.has(index) ? 'text-gray-500' : 'text-red-400 hover:text-red-300 hover:bg-red-400/10'}
+                          disabled={index in votedSubmissions}
+                          className={
+                            index in votedSubmissions 
+                              ? votedSubmissions[index] === 'down'
+                                ? 'text-red-400 bg-red-400/20 hover:bg-red-400/30'
+                                : 'text-gray-500'
+                              : 'text-red-400 hover:text-red-300 hover:bg-red-400/10'
+                          }
                         >
                           <ThumbsDown className="w-4 h-4" />
                         </Button>

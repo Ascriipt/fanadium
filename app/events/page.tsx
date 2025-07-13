@@ -20,7 +20,13 @@ export default function EventsPage() {
   useEffect(() => {
     initializeStorage();
     const eventsData = getEvents(); // This now includes submissionCount
-    setEvents(eventsData);
+    // Sort events by date (earliest first)
+    const sortedEvents = eventsData.sort((a, b) => {
+      const dateA = new Date(`${a.date}T${a.time.replace(' UTC', 'Z')}`);
+      const dateB = new Date(`${b.date}T${b.time.replace(' UTC', 'Z')}`);
+      return dateA.getTime() - dateB.getTime();
+    });
+    setEvents(sortedEvents);
   }, []);
 
   // Helper function to check if event is live
@@ -115,7 +121,7 @@ export default function EventsPage() {
               <CardHeader className="p-0">
                 <div className="relative">
                   <Image
-                    src={event.image || "/placeholder.svg"}
+                    src={event.image || "/placeholder.png"}
                     alt={event.title}
                     width={300}
                     height={200}

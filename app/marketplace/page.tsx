@@ -283,7 +283,7 @@ export default function MarketplacePage() {
             >
               <CardHeader className="p-0 relative">
                 <Image
-                  src={nft.image || "/placeholder.svg"}
+                  src={nft.image || "/placeholder.png"}
                   alt={nft.title}
                   width={250}
                   height={250}

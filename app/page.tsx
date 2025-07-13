@@ -86,13 +86,13 @@ export default function HomePage() {
                 className="bg-black/40 backdrop-blur-sm border-purple-500/20 hover:border-purple-500/40 transition-all duration-300"
               >
                 <CardHeader className="p-0">
-                  <Image
-                    src={event.image || "/placeholder.svg"}
-                    alt={event.title}
-                    width={300}
-                    height={200}
-                    className="w-full h-48 object-cover rounded-t-lg"
-                  />
+                                  <Image
+                  src={event.image || "/placeholder.png"}
+                  alt={event.title}
+                  width={300}
+                  height={200}
+                  className="w-full h-48 object-cover rounded-t-lg"
+                />
                 </CardHeader>
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2 mb-2">
@@ -141,13 +141,13 @@ export default function HomePage() {
                 className="bg-black/40 backdrop-blur-sm border-purple-500/20 hover:border-purple-500/40 transition-all duration-300 group"
               >
                 <CardHeader className="p-0">
-                  <Image
-                    src={nft.image || "/placeholder.svg"}
-                    alt={nft.title}
-                    width={250}
-                    height={250}
-                    className="w-full h-64 object-cover rounded-t-lg group-hover:scale-105 transition-transform duration-300"
-                  />
+                                  <Image
+                  src={nft.image || "/placeholder.png"}
+                  alt={nft.title}
+                  width={250}
+                  height={250}
+                  className="w-full h-64 object-cover rounded-t-lg group-hover:scale-105 transition-transform duration-300"
+                />
                 </CardHeader>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-2">

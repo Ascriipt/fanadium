@@ -88,7 +88,7 @@ export default function ProfilePage() {
         <div className="bg-black/40 backdrop-blur-sm border border-purple-500/20 rounded-2xl p-8 mb-8">
           <div className="flex flex-col md:flex-row items-start gap-6">
             <Avatar className="w-24 h-24 border-2 border-purple-500/30">
-              <AvatarImage src="/placeholder.svg?height=96&width=96" />
+              <AvatarImage src="/placeholder.png" />
               <AvatarFallback className="bg-purple-600/20 text-purple-300 text-2xl">JD</AvatarFallback>
             </Avatar>
 
@@ -179,7 +179,7 @@ export default function ProfilePage() {
                 >
                   <CardHeader className="p-0">
                     <Image
-                      src={nft.image || "/placeholder.svg"}
+                      src={nft.image || "/placeholder.png"}
                       alt={nft.title}
                       width={250}
                       height={250}
@@ -234,7 +234,7 @@ export default function ProfilePage() {
                 >
                   <CardHeader className="p-0">
                     <Image
-                      src={nft.image || "/placeholder.svg"}
+                      src={nft.image || "/placeholder.png"}
                       alt={nft.title}
                       width={250}
                       height={250}
