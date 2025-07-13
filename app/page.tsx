@@ -8,6 +8,7 @@ import { Calendar, Trophy, Users, Zap } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { getEvents, initializeStorage, type Event } from "@/lib/storage"
+import { getSubmissions } from "@/lib/storage"
 
 export default function HomePage() {
   const [featuredEvents, setFeaturedEvents] = useState<Event[]>([])
@@ -15,10 +16,22 @@ export default function HomePage() {
   // Initialize storage and load events
   useEffect(() => {
     initializeStorage();
-    const events = getEvents();
+    const events = getEvents(); // This now includes submissionCount
     // Show first 3 events as featured
     setFeaturedEvents(events.slice(0, 3));
   }, []);
+
+  // Helper function to check if event is live
+  const isEventLive = (event: Event) => {
+    const eventDate = new Date(`${event.date}T${event.time.replace(' UTC', 'Z')}`);
+    const now = new Date();
+    return eventDate.getTime() <= now.getTime();
+  };
+
+  // Helper function to get workshop status
+  const getWorkshopStatus = (event: Event) => {
+    return isEventLive(event) ? false : true; // Workshop closed if event is live, open if not
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-purple-950 to-black">
@@ -86,7 +99,7 @@ export default function HomePage() {
                     <Badge variant="secondary" className="bg-purple-600/20 text-purple-300">
                       {event.sport}
                     </Badge>
-                    {event.workshopActive && (
+                    {getWorkshopStatus(event) && (
                       <Badge className="bg-red-600/20 text-red-300 border-red-500/30">Workshop Live</Badge>
                     )}
                   </div>
@@ -98,7 +111,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex items-center gap-1">
                       <Users className="w-4 h-4" />
-                      {event.workshopParticipants} participants
+                      {event.submissionCount || 0} submissions
                     </div>
                   </div>
                   <Link href={`/events/${event.id}`}>

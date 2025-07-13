@@ -15,16 +15,25 @@ export default function EventsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [events, setEvents] = useState<Event[]>([])
-  const [submissions, setSubmissions] = useState<any[][]>([])
 
   // Initialize storage and load data
   useEffect(() => {
     initializeStorage();
-    const eventsData = getEvents();
-    const submissionsData = getSubmissions();
+    const eventsData = getEvents(); // This now includes submissionCount
     setEvents(eventsData);
-    setSubmissions(submissionsData);
   }, []);
+
+  // Helper function to check if event is live
+  const isEventLive = (event: Event) => {
+    const eventDate = new Date(`${event.date}T${event.time.replace(' UTC', 'Z')}`);
+    const now = new Date();
+    return eventDate.getTime() <= now.getTime();
+  };
+
+  // Helper function to get workshop status
+  const getWorkshopStatus = (event: Event) => {
+    return isEventLive(event) ? false : true; // Workshop closed if event is live, open if not
+  };
 
   const categories = [
     { id: "all", name: "All Events", count: events.length },
@@ -116,9 +125,16 @@ export default function EventsPage() {
                     <Badge variant="secondary" className="bg-purple-600/80 text-white">
                       {event.sport}
                     </Badge>
-                    {event.workshopActive && (
-                      <Badge className="bg-red-600/80 text-white border-red-500/30">Workshop Live</Badge>
+                    {getWorkshopStatus(event) && (
+                      <Badge className="bg-green-600/80 text-white border-green-500/30 text-xs">Workshop Open</Badge>
                     )}
+                    {!getWorkshopStatus(event) && (
+                      <Badge className="bg-red-600/80 text-white border-red-500/30 text-xs">Workshop Closed</Badge>
+                    )}
+                    <div className="flex items-center gap-1 text-white text-xs bg-black/50 px-2 py-1 rounded">
+                      <Users className="w-3 h-3" />
+                      {event.submissionCount || 0}
+                    </div>
                   </div>
                 </div>
               </CardHeader>
@@ -143,28 +159,15 @@ export default function EventsPage() {
                   </div>
                 </div>
 
-                {event.workshopActive && (
-                  <div className="bg-purple-600/10 border border-purple-500/20 rounded-lg p-3 mb-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Palette className="w-4 h-4 text-purple-400" />
-                      <span className="text-purple-300 font-medium text-sm">NFT Workshop Active</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-400 text-xs">
-                      <Users className="w-3 h-3" />
-                      {event.workshopParticipants} creators participating
-                    </div>
-                  </div>
-                )}
-
                 <div className="flex gap-2">
                   <Link href={`/events/${event.id}`} className="flex-1">
                     <Button className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800">
                       <Ticket className="w-4 h-4 mr-2" />
-                      Get Ticket
+                      See Event
                     </Button>
                   </Link>
-                  {event.workshopActive && (
-                    <Link href={`/events/${event.id}/workshop`}>
+                  {getWorkshopStatus(event) && (
+                    <Link href={`/events/${event.id}/submit`}>
                       <Button
                         variant="outline"
                         className="border-purple-500/50 text-purple-300 hover:bg-purple-600/10 bg-transparent"

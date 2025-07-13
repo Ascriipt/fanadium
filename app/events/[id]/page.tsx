@@ -5,14 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, Clock, MapPin, Users, Ticket, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Calendar, Clock, MapPin, Users, Ticket, ThumbsUp, ThumbsDown, FileText } from "lucide-react";
+import Link from "next/link";
 import { 
   getEvents, 
-  getSubmissions, 
-  updateSubmissionVote, 
+  getEventsWithSubmissions,
   initializeStorage,
   type Event,
-  type Submission 
+  type Submission
 } from "@/lib/storage";
 
 export default function EventPage() {
@@ -22,6 +23,9 @@ export default function EventPage() {
   
   const [event, setEvent] = useState<Event | null>(null);
   const [submissionsState, setSubmissionsState] = useState<Submission[]>([]);
+  const [votedSubmissions, setVotedSubmissions] = useState<Set<number>>(new Set());
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
     hours: number;
@@ -29,27 +33,48 @@ export default function EventPage() {
     seconds: number;
   }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   
-  const [votedSubmissions, setVotedSubmissions] = useState<Set<number>>(new Set());
-
   // Initialize storage and load data
   useEffect(() => {
     initializeStorage();
-    const events = getEvents();
-    const allSubmissions = getSubmissions();
+    const eventsWithSubmissions = getEventsWithSubmissions();
     
-    const currentEvent = events.find(e => e.id === eventId);
+    const currentEvent = eventsWithSubmissions.find(e => e.id === eventId);
     if (currentEvent) {
       setEvent(currentEvent);
-      setSubmissionsState(allSubmissions[eventId] || []);
+      setSubmissionsState(currentEvent.submissions || []);
+    }
+    
+    // Load voted submissions from localStorage
+    const votedData = localStorage.getItem('fanadium_voted_submissions');
+    if (votedData) {
+      try {
+        const parsed = JSON.parse(votedData);
+        if (parsed[eventId]) {
+          setVotedSubmissions(new Set(parsed[eventId]));
+        }
+      } catch (error) {
+        console.error('Error loading voted submissions:', error);
+      }
     }
   }, [eventId]);
+
+
 
   // Calculate countdown to event start
   useEffect(() => {
     if (!event) return;
 
     const calculateTimeLeft = () => {
-      const eventDate = new Date(`${event.date}T${event.time}`);
+      // Fix the date parsing - handle UTC time properly
+      let eventDate;
+      if (event.time.includes('UTC')) {
+        // Parse UTC time correctly
+        const timeOnly = event.time.replace(' UTC', '');
+        eventDate = new Date(`${event.date}T${timeOnly}Z`);
+      } else {
+        eventDate = new Date(`${event.date}T${event.time}`);
+      }
+      
       const now = new Date();
       const difference = eventDate.getTime() - now.getTime();
 
@@ -71,29 +96,48 @@ export default function EventPage() {
     return () => clearInterval(timer);
   }, [event]);
 
-  // Handle voting
+
+
+  // Single function voting - only update localStorage, let state sync
   const handleVote = (submissionIndex: number, voteType: 'up' | 'down') => {
     if (votedSubmissions.has(submissionIndex)) return;
-
+    
     const voteChange = voteType === 'up' ? 1 : -1;
     
-    // Update localStorage
-    updateSubmissionVote(eventId, submissionIndex, voteChange);
+    // Only update localStorage, state will sync from there
+    const allSubmissions = getEventsWithSubmissions();
+    if (allSubmissions[eventId]?.submissions?.[submissionIndex]) {
+      allSubmissions[eventId].submissions[submissionIndex].votes += voteChange;
+      localStorage.setItem('fanadium_submissions', JSON.stringify(allSubmissions.map(e => e.submissions)));
+      
+      // Update state from localStorage
+      setSubmissionsState(allSubmissions[eventId].submissions);
+    }
     
-    // Update local state
-    setSubmissionsState(prev => {
-      const newSubmissions = [...prev];
-      newSubmissions[submissionIndex].votes += voteChange;
-      return newSubmissions;
+    // Mark as voted and save to localStorage
+    setVotedSubmissions(prev => {
+      const newVoted = new Set([...prev, submissionIndex]);
+      
+      // Save voted submissions to localStorage
+      const votedData = localStorage.getItem('fanadium_voted_submissions');
+      const allVoted = votedData ? JSON.parse(votedData) : {};
+      allVoted[eventId] = Array.from(newVoted);
+      localStorage.setItem('fanadium_voted_submissions', JSON.stringify(allVoted));
+      
+      return newVoted;
     });
-
-    setVotedSubmissions(prev => new Set([...prev, submissionIndex]));
   };
 
   // Handle ticket purchase
   const handleBuyTickets = () => {
     // Replace with actual ticket seller URL
     window.open(`https://tickets.example.com/event/${eventId}`, '_blank');
+  };
+
+  // Handle opening image modal
+  const handleImageClick = (submission: Submission) => {
+    setSelectedSubmission(submission);
+    setIsImageModalOpen(true);
   };
 
   if (!event) {
@@ -106,7 +150,7 @@ export default function EventPage() {
     );
   }
 
-  const isVotingOpen = timeLeft.days > 0 || timeLeft.hours > 0 || timeLeft.minutes > 0 || timeLeft.seconds > 0;
+  const isWorkshopOpen = timeLeft.days > 0 || timeLeft.hours > 0 || timeLeft.minutes > 0 || timeLeft.seconds > 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-purple-950 to-black">
@@ -152,10 +196,10 @@ export default function EventPage() {
               <div className="border-b border-purple-500/20 pb-4">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-white font-semibold">
-                    {isVotingOpen ? "Voting Closes In" : "Event Has Started"}
+                    {isWorkshopOpen ? "Event Starts In" : "Event Has Started"}
                   </span>
                 </div>
-                {isVotingOpen ? (
+                {isWorkshopOpen ? (
                   <div className="flex gap-4">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-purple-400">{timeLeft.days}</div>
@@ -192,10 +236,10 @@ export default function EventPage() {
                     </Badge>
                     <span className="text-gray-300">•</span>
                     <span className="text-gray-300"></span>
-                    <Badge variant={event.workshopActive ? "secondary" : "default"} className={event.workshopActive ? "bg-red-500/20 text-red-300 border-red-500/30" : "bg-green-500/20 text-green-300 border-green-500/30"}>
-                      {event.workshopActive ? "Workshop Open" : "Workshop Closed"}
+                    <Badge variant={isWorkshopOpen ? "secondary" : "default"} className={isWorkshopOpen ? "bg-green-500/20 text-green-300 border-green-500/30" : "bg-red-500/20 text-red-300 border-red-500/30"}>
+                      {isWorkshopOpen ? "Workshop Open" : "Workshop Closed"}
                     </Badge>
-                    {event.workshopActive && (
+                    {isWorkshopOpen && (
                       <>
                         <span className="text-gray-300">•</span>
                         <Users className="w-4 h-4 text-purple-300" />
@@ -203,22 +247,36 @@ export default function EventPage() {
                       </>
                     )}
                     <span className="text-gray-300">•</span>
-                    <span className="text-white font-semibold">{submissionsState.length}</span>
-                    <span className="text-gray-300 text-sm">submissions</span>
+                    <FileText className="w-4 h-4 text-purple-300" />
+                    <span className="text-white font-semibold">{event.submissionCount}</span>
                   </div>
                 </div>
                 <p className="text-gray-300 mt-4">{event.description}</p>
-                <Button 
-                  onClick={handleBuyTickets}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-                >
-                  <Ticket className="w-4 h-4 mr-2" />
-                  Buy Tickets
-                </Button>
+                <div className="flex gap-4">
+                  <Button 
+                    onClick={handleBuyTickets}
+                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                  >
+                    <Ticket className="w-4 h-4 mr-2" />
+                    Buy Tickets
+                  </Button>
+                  {isWorkshopOpen && (
+                    <Link href={`/events/${eventId}/submit`}>
+                      <Button 
+                        variant="outline"
+                        className="border-purple-500/50 text-purple-300 hover:bg-purple-600/10 bg-transparent"
+                      >
+                        Submit Design
+                      </Button>
+                    </Link>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
+
+
 
         {/* Submissions Section */}
         <div className="mb-8">
@@ -226,14 +284,21 @@ export default function EventPage() {
           {submissionsState.length === 0 ? (
             <Card className="bg-black/20 border-purple-500/20">
               <CardContent className="py-12 text-center">
-                <p className="text-gray-400">No submissions yet for this event.</p>
+                <p className="text-gray-400 mb-4">No submissions yet for this event.</p>
+                {isWorkshopOpen && (
+                  <Link href={`/events/${eventId}/submit`}>
+                    <Button className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800">
+                      Be the First to Submit!
+                    </Button>
+                  </Link>
+                )}
               </CardContent>
             </Card>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {submissionsState.map((submission: Submission, index: number) => (
                 <Card key={index} className="bg-black/20 border-purple-500/20 hover:border-purple-500/40 transition-colors">
-                  <div className="aspect-video bg-gray-800 rounded-t-lg overflow-hidden">
+                  <div className="aspect-video bg-gray-800 rounded-t-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={() => handleImageClick(submission)}>
                     <img 
                       src={submission.image} 
                       alt={submission.title}
@@ -248,41 +313,34 @@ export default function EventPage() {
                       <span className="text-gray-400 text-sm">{submission.date}</span>
                     </div>
                     
-                    {isVotingOpen && (
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleVote(index, 'up')}
-                            disabled={votedSubmissions.has(index)}
-                            className="text-green-400 hover:text-green-300 hover:bg-green-400/10"
-                          >
-                            <ThumbsUp className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleVote(index, 'down')}
-                            disabled={votedSubmissions.has(index)}
-                            className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
-                          >
-                            <ThumbsDown className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-white font-semibold">{submission.votes}</span>
-                          <span className="text-gray-400 text-sm">votes</span>
-                        </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleVote(index, 'up')}
+                          disabled={votedSubmissions.has(index)}
+                          className={votedSubmissions.has(index) ? 'text-gray-500' : 'text-green-400 hover:text-green-300 hover:bg-green-400/10'}
+                        >
+                          <ThumbsUp className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleVote(index, 'down')}
+                          disabled={votedSubmissions.has(index)}
+                          className={votedSubmissions.has(index) ? 'text-gray-500' : 'text-red-400 hover:text-red-300 hover:bg-red-400/10'}
+                        >
+                          <ThumbsDown className="w-4 h-4" />
+                        </Button>
                       </div>
-                    )}
-                    
-                    {!isVotingOpen && (
-                      <div className="text-center">
+                      <div className="flex items-center gap-2">
                         <span className="text-white font-semibold">{submission.votes}</span>
-                        <span className="text-gray-400 text-sm ml-1">final votes</span>
+                        <span className="text-gray-400 text-sm">votes</span>
                       </div>
-                    )}
+                    </div>
+                    
+
                   </CardContent>
                 </Card>
               ))}
@@ -290,6 +348,32 @@ export default function EventPage() {
           )}
         </div>
       </div>
+
+      {/* Image Modal */}
+      <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] bg-purple-950/40 backdrop-blur-3xl border-purple-800/40 shadow-2xl">
+          {selectedSubmission && (
+            <div className="space-y-4">
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-white mb-2">{selectedSubmission.title}</h3>
+                <p className="text-gray-300 mb-4">{selectedSubmission.description}</p>
+                <div className="flex items-center justify-center gap-4 text-sm text-gray-400">
+                  <span>by {selectedSubmission.creator}</span>
+                  <span>•</span>
+                  <span>{selectedSubmission.date}</span>
+                </div>
+              </div>
+              <div className="flex justify-center">
+                <img 
+                  src={selectedSubmission.image} 
+                  alt={selectedSubmission.title}
+                  className="max-w-full max-h-[60vh] object-contain rounded-lg"
+                />
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -11,6 +11,8 @@ export interface Event {
   workshopActive: boolean;
   workshopParticipants: number;
   description: string;
+  submissionCount: number;
+  submissions?: Submission[];
 }
 
 export interface Submission {
@@ -37,11 +39,12 @@ const defaultEvents: Event[] = [
     workshopActive: true,
     workshopParticipants: 234,
     description: "The biggest football event of the year featuring the top European clubs.",
+    submissionCount: 0,
   },
   {
     id: 1,
     title: "World Esports Championship",
-    date: "2024-05-15",
+    date: "2025-05-15",
     time: "18:00 UTC",
     location: "Seoul Arena, South Korea",
     sport: "Esports",
@@ -51,11 +54,12 @@ const defaultEvents: Event[] = [
     workshopActive: true,
     workshopParticipants: 456,
     description: "Top esports teams compete for the ultimate championship title.",
+    submissionCount: 0,
   },
   {
     id: 2,
     title: "NBA Finals Game 7",
-    date: "2024-06-20",
+    date: "2025-06-20",
     time: "21:00 UTC",
     location: "Madison Square Garden, NYC",
     sport: "Basketball",
@@ -65,11 +69,12 @@ const defaultEvents: Event[] = [
     workshopActive: false,
     workshopParticipants: 0,
     description: "The decisive game that will crown the NBA champions.",
+    submissionCount: 0,
   },
   {
     id: 3,
     title: "Formula 1 Monaco Grand Prix",
-    date: "2024-05-26",
+    date: "2025-05-26",
     time: "14:00 UTC",
     location: "Circuit de Monaco",
     sport: "Racing",
@@ -79,11 +84,12 @@ const defaultEvents: Event[] = [
     workshopActive: true,
     workshopParticipants: 189,
     description: "The most prestigious race in the Formula 1 calendar.",
+    submissionCount: 0,
   },
   {
     id: 4,
     title: "Tennis Wimbledon Final",
-    date: "2024-07-14",
+    date: "2025-07-14",
     time: "15:00 UTC",
     location: "All England Club, London",
     sport: "Tennis",
@@ -93,11 +99,12 @@ const defaultEvents: Event[] = [
     workshopActive: true,
     workshopParticipants: 312,
     description: "The most prestigious tennis tournament final.",
+    submissionCount: 0,
   },
   {
     id: 5,
     title: "Olympic Games Opening",
-    date: "2024-07-26",
+    date: "2025-07-26",
     time: "20:00 UTC",
     location: "Paris, France",
     sport: "Olympics",
@@ -107,6 +114,7 @@ const defaultEvents: Event[] = [
     workshopActive: true,
     workshopParticipants: 1024,
     description: "The grand opening ceremony of the Summer Olympics.",
+    submissionCount: 0,
   },
 ];
 
@@ -272,6 +280,7 @@ const defaultSubmissions: Submission[][] = [
 // Storage keys
 const EVENTS_KEY = 'fanadium_events';
 const SUBMISSIONS_KEY = 'fanadium_submissions';
+const VOTED_SUBMISSIONS_KEY = 'fanadium_voted_submissions';
 
 // Helper functions
 const isClient = typeof window !== 'undefined';
@@ -289,15 +298,45 @@ export const initializeStorage = () => {
   }
 };
 
-// Get events from localStorage
+// Get events from localStorage (with submission counts only)
 export const getEvents = (): Event[] => {
   if (!isClient) return defaultEvents;
   
   try {
     const stored = localStorage.getItem(EVENTS_KEY);
-    return stored ? JSON.parse(stored) : defaultEvents;
+    const events = stored ? JSON.parse(stored) : defaultEvents;
+    
+    // Get submission counts
+    const allSubmissions = getSubmissions();
+    events.forEach((event: Event) => {
+      event.submissionCount = allSubmissions[event.id]?.length || 0;
+    });
+    
+    return events;
   } catch (error) {
     console.error('Error reading events from localStorage:', error);
+    return defaultEvents;
+  }
+};
+
+// Get events with full submission data
+export const getEventsWithSubmissions = (): Event[] => {
+  if (!isClient) return defaultEvents;
+  
+  try {
+    const stored = localStorage.getItem(EVENTS_KEY);
+    const events = stored ? JSON.parse(stored) : defaultEvents;
+    
+    // Get full submission data
+    const allSubmissions = getSubmissions();
+    events.forEach((event: Event) => {
+      event.submissionCount = allSubmissions[event.id]?.length || 0;
+      event.submissions = allSubmissions[event.id] || [];
+    });
+    
+    return events;
+  } catch (error) {
+    console.error('Error reading events with submissions from localStorage:', error);
     return defaultEvents;
   }
 };
@@ -353,6 +392,14 @@ export const updateEventSubmissions = (eventId: number, submissions: Submission[
   const allSubmissions = getSubmissions();
   allSubmissions[eventId] = submissions;
   saveSubmissions(allSubmissions);
+  
+  // Update event's submission count
+  const events = getEvents();
+  const eventIndex = events.findIndex(e => e.id === eventId);
+  if (eventIndex !== -1) {
+    events[eventIndex].submissionCount = submissions.length;
+    saveEvents(events);
+  }
 };
 
 // Add a new submission to an event
@@ -369,6 +416,14 @@ export const addSubmission = (eventId: number, submission: Omit<Submission, 'vot
   
   allSubmissions[eventId].push(newSubmission);
   saveSubmissions(allSubmissions);
+  
+  // Update event's submission count
+  const events = getEvents();
+  const eventIndex = events.findIndex(e => e.id === eventId);
+  if (eventIndex !== -1) {
+    events[eventIndex].submissionCount = allSubmissions[eventId].length;
+    saveEvents(events);
+  }
 };
 
 // Update vote count for a submission
@@ -387,4 +442,52 @@ export const resetToDefaults = () => {
   
   localStorage.setItem(EVENTS_KEY, JSON.stringify(defaultEvents));
   localStorage.setItem(SUBMISSIONS_KEY, JSON.stringify(defaultSubmissions));
+}; 
+
+// Get voted submissions from localStorage
+export const getVotedSubmissions = (): Record<number, Set<number>> => {
+  if (!isClient) return {};
+  
+  try {
+    const stored = localStorage.getItem(VOTED_SUBMISSIONS_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // Convert arrays back to Sets
+      const result: Record<number, Set<number>> = {};
+      Object.keys(parsed).forEach(eventId => {
+        result[parseInt(eventId)] = new Set(parsed[eventId]);
+      });
+      return result;
+    }
+    return {};
+  } catch (error) {
+    console.error('Error reading voted submissions from localStorage:', error);
+    return {};
+  }
+};
+
+// Save voted submissions to localStorage
+export const saveVotedSubmissions = (votedSubmissions: Record<number, Set<number>>) => {
+  if (!isClient) return;
+  
+  try {
+    // Convert Sets to arrays for JSON serialization
+    const serializable: Record<number, number[]> = {};
+    Object.keys(votedSubmissions).forEach(eventId => {
+      serializable[parseInt(eventId)] = Array.from(votedSubmissions[parseInt(eventId)]);
+    });
+    localStorage.setItem(VOTED_SUBMISSIONS_KEY, JSON.stringify(serializable));
+  } catch (error) {
+    console.error('Error saving voted submissions to localStorage:', error);
+  }
+};
+
+// Add a vote for a specific submission
+export const addVoteRecord = (eventId: number, submissionIndex: number) => {
+  const votedSubmissions = getVotedSubmissions();
+  if (!votedSubmissions[eventId]) {
+    votedSubmissions[eventId] = new Set();
+  }
+  votedSubmissions[eventId].add(submissionIndex);
+  saveVotedSubmissions(votedSubmissions);
 }; 
