@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -9,97 +9,22 @@ import { Calendar, MapPin, Users, Search, Ticket, Palette, Clock, Trophy, Filter
 import Image from "next/image"
 import Link from "next/link"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { getEvents, getSubmissions, initializeStorage, type Event } from "@/lib/storage"
 
 export default function EventsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
+  const [events, setEvents] = useState<Event[]>([])
+  const [submissions, setSubmissions] = useState<any[][]>([])
 
-  const events = [
-    {
-      id: 1,
-      title: "Champions League Final",
-      date: "2024-06-01",
-      time: "20:00 UTC",
-      location: "Wembley Stadium, London",
-      sport: "Football",
-      image: "/placeholder.svg?height=200&width=300",
-      ticketsAvailable: 1250,
-      ticketPrice: "0.5 CHZ",
-      workshopActive: true,
-      workshopParticipants: 234,
-      description: "The biggest football event of the year featuring the top European clubs.",
-    },
-    {
-      id: 2,
-      title: "World Esports Championship",
-      date: "2024-05-15",
-      time: "18:00 UTC",
-      location: "Seoul Arena, South Korea",
-      sport: "Esports",
-      image: "/placeholder.svg?height=200&width=300",
-      ticketsAvailable: 500,
-      ticketPrice: "0.3 CHZ",
-      workshopActive: true,
-      workshopParticipants: 456,
-      description: "Top esports teams compete for the ultimate championship title.",
-    },
-    {
-      id: 3,
-      title: "NBA Finals Game 7",
-      date: "2024-06-20",
-      time: "21:00 UTC",
-      location: "Madison Square Garden, NYC",
-      sport: "Basketball",
-      image: "/placeholder.svg?height=200&width=300",
-      ticketsAvailable: 800,
-      ticketPrice: "0.8 CHZ",
-      workshopActive: false,
-      workshopParticipants: 0,
-      description: "The decisive game that will crown the NBA champions.",
-    },
-    {
-      id: 4,
-      title: "Formula 1 Monaco Grand Prix",
-      date: "2024-05-26",
-      time: "14:00 UTC",
-      location: "Circuit de Monaco",
-      sport: "Racing",
-      image: "/placeholder.svg?height=200&width=300",
-      ticketsAvailable: 300,
-      ticketPrice: "1.2 CHZ",
-      workshopActive: true,
-      workshopParticipants: 189,
-      description: "The most prestigious race in the Formula 1 calendar.",
-    },
-    {
-      id: 5,
-      title: "Tennis Wimbledon Final",
-      date: "2024-07-14",
-      time: "15:00 UTC",
-      location: "All England Club, London",
-      sport: "Tennis",
-      image: "/placeholder.svg?height=200&width=300",
-      ticketsAvailable: 600,
-      ticketPrice: "0.6 CHZ",
-      workshopActive: true,
-      workshopParticipants: 312,
-      description: "The most prestigious tennis tournament final.",
-    },
-    {
-      id: 6,
-      title: "Olympic Games Opening",
-      date: "2024-07-26",
-      time: "20:00 UTC",
-      location: "Paris, France",
-      sport: "Olympics",
-      image: "/placeholder.svg?height=200&width=300",
-      ticketsAvailable: 2000,
-      ticketPrice: "2.0 CHZ",
-      workshopActive: true,
-      workshopParticipants: 1024,
-      description: "The grand opening ceremony of the Summer Olympics.",
-    },
-  ]
+  // Initialize storage and load data
+  useEffect(() => {
+    initializeStorage();
+    const eventsData = getEvents();
+    const submissionsData = getSubmissions();
+    setEvents(eventsData);
+    setSubmissions(submissionsData);
+  }, []);
 
   const categories = [
     { id: "all", name: "All Events", count: events.length },
@@ -216,14 +141,6 @@ export default function EventsPage() {
                     <MapPin className="w-4 h-4" />
                     {event.location}
                   </div>
-                </div>
-
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2 text-gray-400 text-sm">
-                    <Ticket className="w-4 h-4" />
-                    {event.ticketsAvailable} available
-                  </div>
-                  <span className="text-red-400 font-bold">{event.ticketPrice}</span>
                 </div>
 
                 {event.workshopActive && (

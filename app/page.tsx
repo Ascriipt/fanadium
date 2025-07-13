@@ -1,67 +1,24 @@
+'use client'
+
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, Trophy, Users, Zap } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { getEvents, initializeStorage, type Event } from "@/lib/storage"
 
 export default function HomePage() {
-  const featuredEvents = [
-    {
-      id: 1,
-      title: "Champions League Final",
-      date: "2024-06-01",
-      sport: "Football",
-      image: "/placeholder.svg?height=200&width=300",
-      ticketsAvailable: 1250,
-      workshopActive: true,
-    },
-    {
-      id: 2,
-      title: "World Esports Championship",
-      date: "2024-05-15",
-      sport: "Esports",
-      image: "/placeholder.svg?height=200&width=300",
-      ticketsAvailable: 500,
-      workshopActive: true,
-    },
-    {
-      id: 3,
-      title: "NBA Finals Game 7",
-      date: "2024-06-20",
-      sport: "Basketball",
-      image: "/placeholder.svg?height=200&width=300",
-      ticketsAvailable: 800,
-      workshopActive: false,
-    },
-  ]
+  const [featuredEvents, setFeaturedEvents] = useState<Event[]>([])
 
-  const featuredNFTs = [
-    {
-      id: 1,
-      title: "Legendary Goal Moment",
-      price: "150 CHZ",
-      image: "/placeholder.svg?height=250&width=250",
-      creator: "SportsMoments",
-      rarity: "Legendary",
-    },
-    {
-      id: 2,
-      title: "Victory Celebration",
-      price: "89 CHZ",
-      image: "/placeholder.svg?height=250&width=250",
-      creator: "EsportsArt",
-      rarity: "Epic",
-    },
-    {
-      id: 3,
-      title: "Championship Trophy",
-      price: "200 CHZ",
-      image: "/placeholder.svg?height=250&width=250",
-      creator: "TrophyCollector",
-      rarity: "Legendary",
-    },
-  ]
+  // Initialize storage and load events
+  useEffect(() => {
+    initializeStorage();
+    const events = getEvents();
+    // Show first 3 events as featured
+    setFeaturedEvents(events.slice(0, 3));
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-purple-950 to-black">
@@ -141,7 +98,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex items-center gap-1">
                       <Users className="w-4 h-4" />
-                      {event.ticketsAvailable} tickets
+                      {event.workshopParticipants} participants
                     </div>
                   </div>
                   <Link href={`/events/${event.id}`}>
@@ -157,6 +114,7 @@ export default function HomePage() {
       </section>
 
       {/* Featured NFTs */}
+	  {/*
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
@@ -203,7 +161,7 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Stats Section */}
       
