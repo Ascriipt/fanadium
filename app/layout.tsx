@@ -7,7 +7,7 @@ import { Navigation } from "@/components/navigation"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "ChilizSports - NFT Marketplace & Event Ticketing",
+  title: "fanadium",
   description: "The future of sports NFTs and event ticketing on Chiliz blockchain",
     generator: 'v0.dev'
 }

@@ -1,13 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Menu, X, Wallet, User, Calendar, ShoppingBag, LogIn } from "lucide-react"
+import { Calendar, ShoppingBag, User, Wallet, LogIn, Bell } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
-import { AppKitButton } from '@reown/appkit/react'
+import { useAppKitAccount } from "@reown/appkit/react"
 import { createAppKit } from '@reown/appkit/react'
 import { WagmiProvider } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -78,23 +78,33 @@ createAppKit({
   featuredWalletIds: [SOCIOS_WALLET_ID],
   walletIds: [SOCIOS_WALLET_ID],
   features: {
-	analytics: false,
-	email: false,
-	socials: []
+    analytics: false,
+    email: false,
+    socials: []
   },
 })
 
-function AppKitProvider({ children }) {
+export function AppKitProvider({ children }: { children: React.ReactNode }) {
   return (
-	<WagmiProvider config={wagmiAdapter.wagmiConfig}>
-	  <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-	</WagmiProvider>
+    <WagmiProvider config={wagmiAdapter.wagmiConfig}>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    </WagmiProvider>
   )
 }
 
 export function Navigation() {
-  const [isOpen, setIsOpen] = useState(false)
   const [isConnected, setIsConnected] = useState(false)
+  const { address } = useAppKitAccount()
+
+
+  useEffect(() => {
+    if (address) {
+      console.log("Wallet connected:", address)
+      setIsConnected(true)
+    } else {
+      setIsConnected(false)
+    }
+  }, [address])
 
   const connectWallet = () => {
     setIsConnected(true)
@@ -114,13 +124,11 @@ export function Navigation() {
 
           {/* Desktop Navigation - Centered */}
           <div className="hidden md:flex items-center space-x-8 absolute left-1/2 transform -translate-x-1/2">
-		  	<Link href="/events" className="text-gray-300 hover:text-white transition-colors flex items-center gap-2">
+            <Link href="/events" className="text-gray-300 hover:text-white transition-colors flex items-center gap-2">
               <Calendar className="w-4 h-4" />
               Events
             </Link>
-            <Link
-              href="/marketplace"
-              className="text-gray-300 hover:text-white transition-colors flex items-center gap-2">
+            <Link href="/marketplace" className="text-gray-300 hover:text-white transition-colors flex items-center gap-2">
               <ShoppingBag className="w-4 h-4" />
               Marketplace
             </Link>
@@ -128,90 +136,35 @@ export function Navigation() {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            {/* <Button onClick={connectWallet} className="text-gray-300 hover:text-white">
-              <Wallet className="w-4 h-4 mr-2" />
-              Connect Wallet
-            </Button> */}
-			<appkit-button />
+            <appkit-button />
+
+            {/* 👤 Profile Icon */}
             <div className="text-gray-300 hover:text-white">
-				<Link href="/profile" className="block text-gray-300 hover:text-white transition-colors py-2"
-				onClick={() => setIsOpen(false)}>
-              		<User className="w-4 h-4 mr-2" />
-				</Link>
-            </div>
-          </div>
-
-          {/* Mobile menu button */}
-          <Button variant="ghost" size="icon" className="md:hidden text-white" onClick={() => setIsOpen(!isOpen)}>
-            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </Button>
-        </div>
-
-        {/* Mobile Navigation */}
-        {isOpen && (
-          <div className="md:hidden py-4 space-y-4 border-t border-purple-500/20">
-            <Link
-              href="/marketplace"
-              className="block text-gray-300 hover:text-white transition-colors py-2"
-              onClick={() => setIsOpen(false)}
-            >
-              Marketplace
-            </Link>
-            <Link
-              href="/events"
-              className="block text-gray-300 hover:text-white transition-colors py-2"
-              onClick={() => setIsOpen(false)}
-            >
-              Events
-            </Link>
-            <Link
-              href="/profile"
-              className="block text-gray-300 hover:text-white transition-colors py-2"
-              onClick={() => setIsOpen(false)}
-            >
-              Profile
-            </Link>
-            <div className="pt-4 space-y-2">
-              {!isConnected ? (
-                <Button
-                  onClick={connectWallet}
-                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
-                >
-                  <Wallet className="w-4 h-4 mr-2" />
-                  Connect Wallet
-                </Button>
-              ) : (
-                <div className="flex items-center gap-3 p-3 bg-purple-600/10 rounded-lg border border-purple-500/20">
-                  <Avatar className="w-10 h-10">
-                    <AvatarImage src="/placeholder.png" />
-                    <AvatarFallback className="bg-purple-600/20 text-purple-300">JD</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="text-white font-medium">John Doe</div>
-                    <div className="text-gray-400 text-sm">Connected</div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsConnected(false)}
-                    className="text-red-400 hover:text-red-300"
-                  >
-                    <Wallet className="w-4 h-4" />
-                  </Button>
-                </div>
-              )}
-              <Link href="/login">
-                <Button
-                  variant="outline"
-                  className="w-full border-purple-500/50 text-purple-300 hover:bg-purple-600/10 bg-transparent"
-                >
-                  <LogIn className="w-4 h-4 mr-2" />
-                  Login
-                </Button>
+              <Link href="/profile" className="block text-gray-300 hover:text-white transition-colors py-2">
+                <User className="w-4 h-4 mr-2" />
               </Link>
             </div>
+
+            {/* 🔔 Notification Icon with Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white relative">
+                  <Bell className="w-5 h-5" />
+                  {/* Notification dot */}
+                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 animate-ping" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-72 bg-black text-white border border-purple-500/20">
+                <DropdownMenuItem
+                  onClick={() => alert("Claim your Wimbledon 2025 NFT")}
+                  className="cursor-pointer hover:bg-purple-700/20"
+                >
+                  🎾 Claim your Wimbledon 2025 NFT
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-        )}
+        </div>
       </div>
     </nav>
   )
