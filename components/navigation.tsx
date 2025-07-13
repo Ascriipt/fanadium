@@ -26,10 +26,6 @@ declare namespace JSX {
   }
 }
 
-export const client = createPublicClient({
-  transport: http(CHILIZ_RPC),
-})
-
 const metadata = {
   name: 'Socios Only DApp',
   description: 'DApp pour Socios uniquement',
@@ -37,20 +33,36 @@ const metadata = {
   icons: ['https://avatars.githubusercontent.com/u/179229932'],
 }
 
-const chilizNetwork = {
-  id: 1776,
+export const chilizNetwork = {
+  id: 88882,
   name: 'Chiliz Chain',
   network: 'chiliz',
   rpcUrls: {
-	default: CHILIZ_RPC,
+    default: {
+      http: [CHILIZ_RPC],
+    },
+    public: {
+      http: [CHILIZ_RPC],
+    },
   },
   nativeCurrency: {
-	name: 'Chiliz Token',
-	symbol: 'CHZ',
-	decimals: 18,
+    name: 'Chiliz',
+    symbol: 'CHZ',
+    decimals: 18,
+  },
+  blockExplorers: {
+    default: {
+      name: 'Chiliz Explorer',
+      url: 'https://testnet.chiliscan.com/',
+    },
   },
   testnet: true,
-}
+} as const satisfies Chain
+
+export const client = createPublicClient({
+  chain: chilizNetwork,
+  transport: http(CHILIZ_RPC),
+})
 
 const wagmiAdapter = new WagmiAdapter({
   networks: [chilizNetwork],

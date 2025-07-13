@@ -15,8 +15,6 @@ export default function ProfilePage() {
   const userStats = {
     nftsOwned: 47,
     nftsCreated: 12,
-    totalValue: "2,450 CHZ",
-    followers: 1234,
   }
 
   const ownedNFTs = [
@@ -107,13 +105,6 @@ export default function ProfilePage() {
                     <Edit className="w-4 h-4 mr-2" />
                     Edit Profile
                   </Button>
-                  <Button
-                    variant="outline"
-                    className="border-purple-500/50 text-purple-300 hover:bg-purple-600/10 bg-transparent"
-                  >
-                    <Share className="w-4 h-4 mr-2" />
-                    Share
-                  </Button>
                 </div>
               </div>
 
@@ -122,24 +113,6 @@ export default function ProfilePage() {
                 Specializing in football and esports collectibles.
               </p>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{userStats.nftsOwned}</div>
-                  <div className="text-gray-400 text-sm">NFTs Owned</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{userStats.nftsCreated}</div>
-                  <div className="text-gray-400 text-sm">Created</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{userStats.totalValue}</div>
-                  <div className="text-gray-400 text-sm">Portfolio Value</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{userStats.followers}</div>
-                  <div className="text-gray-400 text-sm">Followers</div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -199,7 +172,6 @@ export default function ProfilePage() {
                       >
                         {nft.rarity}
                       </Badge>
-                      <span className="text-red-400 font-bold text-sm">{nft.price}</span>
                     </div>
                     <CardTitle className="text-white text-sm mb-3">{nft.title}</CardTitle>
                     <div className="flex items-center justify-between text-gray-400 text-xs">
@@ -252,7 +224,6 @@ export default function ProfilePage() {
                       >
                         {nft.rarity}
                       </Badge>
-                      <span className="text-red-400 font-bold text-sm">{nft.price}</span>
                     </div>
                     <CardTitle className="text-white text-sm mb-3">{nft.title}</CardTitle>
                     <div className="flex items-center justify-between text-gray-400 text-xs">
