@@ -7,6 +7,79 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Menu, X, Wallet, User, Calendar, ShoppingBag, LogIn } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
+import { AppKitButton } from '@reown/appkit/react'
+import { createAppKit } from '@reown/appkit/react'
+import { WagmiProvider } from 'wagmi'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
+import { createPublicClient, http } from 'viem'
+
+const queryClient = new QueryClient()
+
+const CHILIZ_RPC = process.env.NEXT_PUBLIC_CHILIZ_RPC
+const PROJECT_ID = process.env.NEXT_PUBLIC_PROJECT_ID
+const SOCIOS_WALLET_ID = process.env.NEXT_PUBLIC_SOCIOS_WALLET_ID
+
+declare namespace JSX {
+  interface IntrinsicElements {
+    'appkit-button': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>
+  }
+}
+
+export const client = createPublicClient({
+  transport: http(CHILIZ_RPC),
+})
+
+const metadata = {
+  name: 'Socios Only DApp',
+  description: 'DApp pour Socios uniquement',
+  url: 'http://localhost:5173',
+  icons: ['https://avatars.githubusercontent.com/u/179229932'],
+}
+
+const chilizNetwork = {
+  id: 1776,
+  name: 'Chiliz Chain',
+  network: 'chiliz',
+  rpcUrls: {
+	default: CHILIZ_RPC,
+  },
+  nativeCurrency: {
+	name: 'Chiliz Token',
+	symbol: 'CHZ',
+	decimals: 18,
+  },
+  testnet: true,
+}
+
+const wagmiAdapter = new WagmiAdapter({
+  networks: [chilizNetwork],
+  projectId: PROJECT_ID,
+  ssr: true,
+})
+
+createAppKit({
+  adapters: [wagmiAdapter],
+  networks: [chilizNetwork],
+  projectId: PROJECT_ID,
+  metadata,
+  featuredWalletIds: [SOCIOS_WALLET_ID],
+  walletIds: [SOCIOS_WALLET_ID],
+  features: {
+	analytics: false,
+	email: false,
+	socials: []
+  },
+})
+
+function AppKitProvider({ children }) {
+  return (
+	<WagmiProvider config={wagmiAdapter.wagmiConfig}>
+	  <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+	</WagmiProvider>
+  )
+}
+
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
   const [isConnected, setIsConnected] = useState(false)
@@ -29,53 +102,31 @@ export function Navigation() {
 
           {/* Desktop Navigation - Centered */}
           <div className="hidden md:flex items-center space-x-8 absolute left-1/2 transform -translate-x-1/2">
-            <Link
-              href="/marketplace"
-              className="text-gray-300 hover:text-white transition-colors flex items-center gap-2"
-            >
-              <ShoppingBag className="w-4 h-4" />
-              Marketplace
-            </Link>
-            <Link href="/events" className="text-gray-300 hover:text-white transition-colors flex items-center gap-2">
+		  	<Link href="/events" className="text-gray-300 hover:text-white transition-colors flex items-center gap-2">
               <Calendar className="w-4 h-4" />
               Events
+            </Link>
+            <Link
+              href="/marketplace"
+              className="text-gray-300 hover:text-white transition-colors flex items-center gap-2">
+              <ShoppingBag className="w-4 h-4" />
+              Marketplace
             </Link>
           </div>
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            {!isConnected ? (
-              <Button onClick={connectWallet} className="text-gray-300 hover:text-white">
-                <Wallet className="w-4 h-4 mr-2" />
-                Connect Wallet
-              </Button>
-            ) : (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src="/placeholder.png" />
-                      <AvatarFallback className="bg-purple-600/20 text-purple-300 text-sm">JD</AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-black/90 backdrop-blur-sm border-purple-500/20">
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile" className="text-gray-300 hover:text-white">
-                      <User className="w-4 h-4 mr-2" />
-                      Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => setIsConnected(false)}
-                    className="text-red-400 hover:text-red-300"
-                  >
-                    <Wallet className="w-4 h-4 mr-2" />
-                    Disconnect
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+            {/* <Button onClick={connectWallet} className="text-gray-300 hover:text-white">
+              <Wallet className="w-4 h-4 mr-2" />
+              Connect Wallet
+            </Button> */}
+			<appkit-button />
+            <div className="text-gray-300 hover:text-white">
+				<Link href="/profile" className="block text-gray-300 hover:text-white transition-colors py-2"
+				onClick={() => setIsOpen(false)}>
+              		<User className="w-4 h-4 mr-2" />
+				</Link>
+            </div>
           </div>
 
           {/* Mobile menu button */}
